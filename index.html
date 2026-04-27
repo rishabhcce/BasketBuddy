@@ -269,7 +269,7 @@ footer{background:#0d2818;color:#9ca3af}
 .cart-hdr h3{color:#fff;font-size:17px;font-weight:700}
 .cart-x{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:grid;place-items:center;transition:.2s}
 .cart-x:hover{background:rgba(255,255,255,.35)}
-.cart-del-bar{background:var(--glll);padding:10px 22px;font-size:13px;font-weight:600;color:var(--g);display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--bord2);flex-shrink:0}
+.cart-del-bar{display:none}
 .cart-buddy-sug{background:#f0fdf4;border-bottom:1px solid var(--bord2);padding:12px 20px;display:none;flex-shrink:0}
 .cbs-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .cbs-row span{font-size:12px;font-weight:700;color:var(--g)}
@@ -1101,12 +1101,21 @@ footer{background:#0d2818;color:#9ca3af}
           </div>
           <div class="popt-body">
             <div class="card-form">
-              <input type="text" placeholder="Card Number (16 digits)" maxlength="19" oninput="fmtCardNum(this)">
+              <label style="font-size:12px;font-weight:700;color:var(--dark)">Card Number</label>
+              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="23" oninput="fmtCardNum(this)">
+              <div id="cardVerifyMsg" style="font-size:12px;font-weight:600;min-height:16px;color:var(--muted)">Enter a valid card number to detect the network.</div>
               <div class="fg-2" style="margin-bottom:0">
-                <input type="text" placeholder="MM / YY" maxlength="5" oninput="fmtExpiry(this)">
-                <input type="password" placeholder="CVV" maxlength="3">
+                <div>
+                  <label style="font-size:12px;font-weight:700;color:var(--dark);display:block;margin-bottom:6px">Expiry</label>
+                  <input type="text" id="cardExpiry" placeholder="MM / YY" maxlength="5" oninput="fmtExpiry(this)">
+                </div>
+                <div>
+                  <label style="font-size:12px;font-weight:700;color:var(--dark);display:block;margin-bottom:6px">CVV</label>
+                  <input type="password" id="cardCvv" placeholder="123" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'')">
+                </div>
               </div>
-              <input type="text" placeholder="Name on Card">
+              <label style="font-size:12px;font-weight:700;color:var(--dark)">Name on Card</label>
+              <input type="text" id="cardName" placeholder="Rahul Sharma">
               <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);cursor:pointer">
                 <input type="checkbox" style="accent-color:var(--g)"> Save card for faster checkout
               </label>
@@ -1586,7 +1595,7 @@ function goShop(){document.getElementById('shop').scrollIntoView({behavior:'smoo
 /*  CART LOGIC  */
 function addToCart(id,qty=1){
   CART[id]=(CART[id]||0)+qty;
-  refreshAddBtn(id); syncCart();
+  refreshAddBtn(id); syncCart(); maybeSuggestInCart();
   const p=PRODUCTS.find(x=>x.id==id);
   showToast(`${p.name} added!`,'ok');
   maybeSuggestInCart();
@@ -1621,6 +1630,7 @@ function syncCart(){
   const body=document.getElementById('cartBody'), ftr=document.getElementById('cartFtr');
   if(!total){
     body.innerHTML=`<div class="cart-empty"><div class="ce-img"><i class="fas fa-shopping-basket"></i></div><h4>Your basket is empty</h4><p>Add fresh items to get started!</p></div>`;
+    document.getElementById('cartBuddySug').style.display='none';
     ftr.style.display='none'; return;
   }
   let iTotal=0,savings=0,html='';
@@ -1657,6 +1667,7 @@ function syncCart(){
   document.getElementById('osDsc').textContent='-Rs. '+cpnDiscount;
   document.getElementById('osTot').textContent='Rs. '+grand.toLocaleString();
   applyImageFallbacks(body);
+  maybeSuggestInCart();
 }
 
 function openCartDrawer(){document.getElementById('cartOverlay').classList.add('on');document.getElementById('cartDrawer').classList.add('on')}
@@ -1691,7 +1702,12 @@ function maybeSuggestInCart(){
     {when:[8,34],notWhen:10,msg:'Your breakfast basket is set up well. Add butter for toast and omelettes.',id:10},
     {when:[13],notWhen:1,msg:'Add fresh tomatoes to build a richer curry base.',id:1},
     {when:[1,33],notWhen:37,msg:'Tomato and garlic pair beautifully with mozzarella for pasta night.',id:37},
+    {when:[9,19],notWhen:24,msg:'Palak paneer lovers usually add Kitchen King Masala for a richer finish.',id:24},
   ];
+  if(!keys.length){
+    sug.style.display='none';
+    return;
+  }
   for(const s of suggestions){
     if(s.when.some(x=>keys.includes(x))&&!keys.includes(s.notWhen)){
       const p=PRODUCTS.find(x=>x.id===s.id);
@@ -1782,14 +1798,88 @@ function verifyUPI(){
   if(v.includes('@')&&v.length>4){msg.style.color='var(--g)';msg.textContent=' UPI ID verified successfully!';showToast(' UPI verified!','ok')}
   else{msg.style.color='var(--red)';msg.textContent=' Invalid UPI ID. Format: name@paytm or name@okaxis'}
 }
-function fmtCardNum(el){let v=el.value.replace(/\D/g,'').substring(0,16);el.value=v.replace(/(.{4})/g,'$1 ').trim()}
+function detectCardType(num){
+  if(/^4\d{12}(\d{3})?(\d{3})?$/.test(num)) return 'Visa';
+  if(/^(5[1-5]\d{14}|2(2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(num)) return 'Mastercard';
+  if(/^(60|65|81|82|508)\d{10,17}$/.test(num)) return 'RuPay';
+  if(/^3[47]\d{13}$/.test(num)) return 'American Express';
+  if(/^6(?:011|5\d{2})\d{12}$/.test(num)) return 'Discover';
+  return '';
+}
+function isValidLuhn(num){
+  let sum=0, shouldDouble=false;
+  for(let i=num.length-1;i>=0;i--){
+    let digit=Number(num[i]);
+    if(shouldDouble){
+      digit*=2;
+      if(digit>9) digit-=9;
+    }
+    sum+=digit;
+    shouldDouble=!shouldDouble;
+  }
+  return num.length >= 13 && sum % 10 === 0;
+}
+function updateCardVerification(){
+  const input=document.getElementById('cardNumber');
+  const msg=document.getElementById('cardVerifyMsg');
+  if(!input || !msg) return;
+  const raw=input.value.replace(/\D/g,'');
+  const brand=detectCardType(raw);
+  if(!raw){
+    msg.style.color='var(--muted)';
+    msg.textContent='Enter a valid card number to detect the network.';
+    return;
+  }
+  if(!brand){
+    msg.style.color='var(--red)';
+    msg.textContent='Card network not recognized yet. Check the number and try again.';
+    return;
+  }
+  if(isValidLuhn(raw)){
+    msg.style.color='var(--g)';
+    msg.textContent=`${brand} card verified successfully.`;
+  }else{
+    msg.style.color='var(--warning)';
+    msg.textContent=`${brand} detected. Complete the full number to verify it.`;
+  }
+}
+function fmtCardNum(el){
+  let v=el.value.replace(/\D/g,'').substring(0,19);
+  el.value=v.replace(/(.{4})/g,'$1 ').trim();
+  updateCardVerification();
+}
 function fmtExpiry(el){let v=el.value.replace(/\D/g,'').substring(0,4);if(v.length>=2)v=v.slice(0,2)+'/'+v.slice(2);el.value=v}
+function verifyCardDetails(){
+  const number=document.getElementById('cardNumber')?.value.replace(/\D/g,'') || '';
+  const expiry=document.getElementById('cardExpiry')?.value.trim() || '';
+  const cvv=document.getElementById('cardCvv')?.value.trim() || '';
+  const name=document.getElementById('cardName')?.value.trim() || '';
+  const brand=detectCardType(number);
+  if(!brand || !isValidLuhn(number)){
+    showToast('Enter a valid card number before paying.','err');
+    return false;
+  }
+  if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)){
+    showToast('Enter expiry in MM / YY format.','err');
+    return false;
+  }
+  if(cvv.length < 3 || cvv.length > 4){
+    showToast('Enter a valid CVV.','err');
+    return false;
+  }
+  if(name.length < 3){
+    showToast('Enter the card holder name.','err');
+    return false;
+  }
+  return true;
+}
 async function placeOrder(){
   if(!requireUserSession('Please sign in with a customer account before placing your order.')) return;
   if(activePay==='upi'){
     const v=document.getElementById('upiId').value.trim();
     if(!v.includes('@')){showToast('Please verify your UPI ID first','err');return}
   }
+  if(activePay==='card' && !verifyCardDetails()) return;
   const btn=document.getElementById('placeBtn');
   btn.textContent='Processing payment...'; btn.disabled=true;
   try{
