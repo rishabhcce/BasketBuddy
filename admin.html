@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>BasketBuddy Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --green:#1e6b3b;--green-light:#eaf6ee;--green-soft:#f5fbf7;--dark:#111827;--text:#374151;
+  --muted:#6b7280;--border:#e5e7eb;--danger:#dc2626;--warning:#b45309;--white:#fff;
+  --shadow:0 12px 32px rgba(17,24,39,.08);--r16:16px;--r12:12px;--r999:999px;
+}
+body{font-family:'DM Sans',sans-serif;background:linear-gradient(180deg,#f4faf6 0%,#fbfcfb 100%);color:var(--dark);line-height:1.5}
+.wrap{max-width:1280px;margin:0 auto;padding:24px}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:18px 0 22px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-badge{width:46px;height:46px;border-radius:14px;background:var(--green);display:grid;place-items:center;color:#fff;font-size:20px}
+.brand h1{font-family:'Playfair Display',serif;font-size:28px}
+.top-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r999);background:var(--white);border:1px solid var(--border);font-size:13px;font-weight:700}
+.btn{border:none;border-radius:var(--r999);padding:12px 18px;font-weight:700;cursor:pointer;transition:.2s}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{filter:brightness(1.05)}
+.btn-soft{background:var(--green-light);color:var(--green)}
+.btn-danger{background:#fee2e2;color:var(--danger)}
+.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-bottom:18px}
+.card{background:var(--white);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow)}
+.hero-card{padding:28px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:10px}
+.hero-card h2{font-family:'Playfair Display',serif;font-size:40px;line-height:1.1;margin-bottom:12px}
+.hero-card p{color:var(--muted);max-width:620px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:22px}
+.stat{padding:18px;border-radius:18px;background:var(--green-soft);border:1px solid var(--border)}
+.stat strong{display:block;font-size:28px;color:var(--green)}
+.stat span{font-size:12px;font-weight:700;color:var(--text)}
+.login-card{padding:24px}
+.login-card h3,.section-title{font-size:20px;font-weight:800;margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:13px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.field input,.field textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:14px;outline:none;font:inherit}
+.field input:focus,.field textarea:focus{border-color:var(--green)}
+.layout{display:grid;grid-template-columns:.95fr 1.35fr;gap:18px}
+.panel{padding:22px}
+.subtle{font-size:13px;color:var(--muted)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.search{width:100%;max-width:280px;padding:11px 14px;border:1.5px solid var(--border);border-radius:14px}
+.table-wrap{overflow:auto;border:1px solid var(--border);border-radius:18px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:14px 16px;border-bottom:1px solid var(--border);text-align:left;font-size:13px;vertical-align:middle}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);background:#fbfcfb}
+tr:last-child td{border-bottom:none}
+.chip{display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:var(--r999);font-size:11px;font-weight:800}
+.chip.ok{background:#dcfce7;color:#166534}
+.chip.low{background:#fef3c7;color:#92400e}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.icon-btn{width:34px;height:34px;border:none;border-radius:10px;cursor:pointer}
+.icon-btn.edit{background:#e0f2fe;color:#0369a1}
+.icon-btn.delete{background:#fee2e2;color:#b91c1c}
+.notice{margin-top:12px;font-size:13px;font-weight:700}
+.notice.ok{color:var(--green)}
+.notice.err{color:var(--danger)}
+.hidden{display:none!important}
+@media(max-width:980px){
+  .hero,.layout,.form-grid,.stats{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge"><i class="fas fa-store"></i></div>
+      <div>
+        <h1>BasketBuddy Admin</h1>
+        <div class="subtle">Inventory, stock alerts, and product management</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <a class="pill" href="/index.html"><i class="fas fa-arrow-left"></i> Back to Store</a>
+      <div class="pill" id="sessionPill"><i class="fas fa-user-clock"></i> Signed out</div>
+      <button class="btn btn-danger hidden" id="logoutBtn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="card hero-card">
+      <div class="eyebrow">Professor Demo</div>
+      <h2>Live admin dashboard for Fresh Mart inventory</h2>
+      <p>This page talks to the same backend as the storefront. You can log in as admin, review metrics, create new products, update stock, and delete inventory records without changing the customer-facing design.</p>
+      <div class="stats">
+        <div class="stat"><strong id="statRevenue">Rs. 0</strong><span>Revenue</span></div>
+        <div class="stat"><strong id="statOrders">0</strong><span>Total Orders</span></div>
+        <div class="stat"><strong id="statProducts">0</strong><span>Products</span></div>
+        <div class="stat"><strong id="statLow">0</strong><span>Low Stock</span></div>
+      </div>
+    </div>
+    <div class="card login-card" id="loginCard">
+      <h3>Admin Login</h3>
+      <div class="field">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="Enter your admin email" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label>Access Code</label>
+        <input id="loginCode" type="text" placeholder="Enter secure access code" autocomplete="one-time-code">
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="adminLogin()">Open Dashboard</button>
+      <div class="notice" id="loginNotice"></div>
+    </div>
+  </div>
+
+  <div class="layout hidden" id="dashboard">
+    <div class="card panel">
+      <div class="toolbar">
+        <div>
+          <div class="section-title" id="formTitle">Create Product</div>
+          <div class="subtle">Add or update inventory records with stock thresholds.</div>
+        </div>
+      </div>
+      <form id="productForm">
+        <div class="form-grid">
+          <div class="field">
+            <label>Product ID</label>
+            <input id="productId" type="number" required>
+          </div>
+          <div class="field">
+            <label>Name</label>
+            <input id="productName" type="text" required>
+          </div>
+          <div class="field">
+            <label>Weight</label>
+            <input id="productWeight" type="text" placeholder="1 kg" required>
+          </div>
+          <div class="field">
+            <label>Badge</label>
+            <input id="productBadge" type="text" placeholder="organic / new">
+          </div>
+          <div class="field">
+            <label>Price</label>
+            <input id="productPrice" type="number" required>
+          </div>
+          <div class="field">
+            <label>MRP</label>
+            <input id="productMrp" type="number" required>
+          </div>
+          <div class="field">
+            <label>Discount %</label>
+            <input id="productDisc" type="number" value="0">
+          </div>
+          <div class="field">
+            <label>Review Count</label>
+            <input id="productRev" type="number" value="0">
+          </div>
+          <div class="field">
+            <label>Rating</label>
+            <input id="productRating" type="number" step="0.1" min="0" max="5" value="4.5">
+          </div>
+          <div class="field">
+            <label>Quantity In Stock</label>
+            <input id="productStock" type="number" value="20" required>
+          </div>
+          <div class="field">
+            <label>Low Stock Threshold</label>
+            <input id="productThreshold" type="number" value="10" required>
+          </div>
+          <div class="field">
+            <label>Categories</label>
+            <input id="productCat" type="text" placeholder="veggies,all,best" required>
+          </div>
+        </div>
+        <div class="field">
+          <label>Image URL</label>
+          <input id="productImage" type="text" placeholder="https://...">
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn btn-primary">Save Product</button>
+          <button type="button" class="btn btn-soft" onclick="resetForm()">Reset</button>
+        </div>
+        <div class="notice" id="formNotice"></div>
+      </form>
+    </div>
+
+    <div class="card panel">
+      <div class="toolbar">
+        <div>
+          <div class="section-title">Inventory Items</div>
+          <div class="subtle">Low-stock products are highlighted using your backend threshold logic.</div>
+        </div>
+        <input id="searchInput" class="search" type="text" placeholder="Search products..." oninput="renderProducts()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productRows"></tbody>
+        </table>
+      </div>
+      <div class="notice" id="tableNotice"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = "";
+const state = {
+  token: localStorage.getItem("basketbuddy_admin_token") || "",
+  adminName: localStorage.getItem("basketbuddy_admin_name") || "",
+  products: [],
+  editingId: null
+};
+
+function setNotice(id, text, type="ok"){
+  const el = document.getElementById(id);
+  el.textContent = text || "";
+  el.className = `notice ${text ? type : ""}`;
+}
+
+async function api(path, options={}){
+  const headers = { "Content-Type":"application/json", ...(options.headers || {}) };
+  if(state.token) headers.Authorization = `Bearer ${state.token}`;
+  const res = await fetch(API_BASE + path, { ...options, headers });
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+function updateSessionUI(){
+  const loggedIn = !!state.token;
+  document.getElementById("loginCard").classList.toggle("hidden", loggedIn);
+  document.getElementById("dashboard").classList.toggle("hidden", !loggedIn);
+  document.getElementById("logoutBtn").classList.toggle("hidden", !loggedIn);
+  document.getElementById("sessionPill").innerHTML = loggedIn
+    ? `<i class="fas fa-shield-halved"></i> ${state.adminName || "Admin"}`
+    : `<i class="fas fa-user-clock"></i> Signed out`;
+}
+
+function fillOverview(products){
+  const revenue = products.reduce((sum,p)=>sum + (Number(p.p)||0),0);
+  const low = products.filter(p => Number(p.quantity_in_stock ?? p.stock ?? 0) <= Number(p.low_stock_threshold ?? 0)).length;
+  document.getElementById("statRevenue").textContent = `Rs. ${revenue.toLocaleString()}`;
+  document.getElementById("statOrders").textContent = "-";
+  document.getElementById("statProducts").textContent = products.length;
+  document.getElementById("statLow").textContent = low;
+}
+
+function renderProducts(){
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const rows = document.getElementById("productRows");
+  const items = state.products.filter(p => p.name.toLowerCase().includes(q));
+  rows.innerHTML = items.map(product => {
+    const stock = Number(product.quantity_in_stock ?? product.stock ?? 0);
+    const threshold = Number(product.low_stock_threshold ?? 0);
+    const low = stock <= threshold;
+    return `
+      <tr>
+        <td>${product.id}</td>
+        <td>
+          <div style="font-weight:700">${product.name}</div>
+          <div style="color:#6b7280;font-size:12px">${product.w}</div>
+        </td>
+        <td>Rs. ${Number(product.p).toLocaleString()}</td>
+        <td>${stock}</td>
+        <td><span class="chip ${low ? "low" : "ok"}">${low ? "Low Stock" : "Healthy"}</span></td>
+        <td>
+          <div class="actions">
+            <button class="icon-btn edit" onclick="startEdit(${product.id})"><i class="fas fa-pen"></i></button>
+            <button class="icon-btn delete" onclick="deleteProduct(${product.id})"><i class="fas fa-trash"></i></button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+  fillOverview(state.products);
+}
+
+function resetForm(){
+  state.editingId = null;
+  document.getElementById("formTitle").textContent = "Create Product";
+  document.getElementById("productForm").reset();
+  document.getElementById("productRating").value = "4.5";
+  document.getElementById("productDisc").value = "0";
+  document.getElementById("productRev").value = "0";
+  document.getElementById("productStock").value = "20";
+  document.getElementById("productThreshold").value = "10";
+  setNotice("formNotice", "");
+}
+
+function fillForm(product){
+  state.editingId = product.id;
+  document.getElementById("formTitle").textContent = `Edit Product #${product.id}`;
+  document.getElementById("productId").value = product.id;
+  document.getElementById("productName").value = product.name || "";
+  document.getElementById("productWeight").value = product.w || "";
+  document.getElementById("productBadge").value = product.badge || "";
+  document.getElementById("productPrice").value = product.p || 0;
+  document.getElementById("productMrp").value = product.mrp || 0;
+  document.getElementById("productDisc").value = product.disc || 0;
+  document.getElementById("productRev").value = product.rev || 0;
+  document.getElementById("productRating").value = product.rating || 4.5;
+  document.getElementById("productStock").value = product.quantity_in_stock ?? product.stock ?? 0;
+  document.getElementById("productThreshold").value = product.low_stock_threshold ?? 10;
+  document.getElementById("productCat").value = (product.cat || []).join(",");
+  document.getElementById("productImage").value = product.img || product.image || "";
+}
+
+async function loadProducts(){
+  const data = await api("/api/products");
+  state.products = data.products || [];
+  renderProducts();
+}
+
+async function loadOverview(){
+  try{
+    const data = await api("/api/admin/overview");
+    document.getElementById("statRevenue").textContent = `Rs. ${Number(data.metrics?.revenue || 0).toLocaleString()}`;
+    document.getElementById("statOrders").textContent = data.metrics?.totalOrders ?? 0;
+    document.getElementById("statProducts").textContent = data.metrics?.totalProducts ?? 0;
+    document.getElementById("statLow").textContent = data.metrics?.lowStockCount ?? 0;
+  }catch(_){
+    fillOverview(state.products);
+  }
+}
+
+async function adminLogin(){
+  try{
+    const data = await api("/api/auth/admin/login", {
+      method:"POST",
+      body: JSON.stringify({
+        email: document.getElementById("loginEmail").value.trim(),
+        password: document.getElementById("loginPassword").value.trim(),
+        accessCode: document.getElementById("loginCode").value.trim()
+      })
+    });
+    state.token = data.token;
+    state.adminName = data.admin?.name || "Admin";
+    localStorage.setItem("basketbuddy_admin_token", state.token);
+    localStorage.setItem("basketbuddy_admin_name", state.adminName);
+    updateSessionUI();
+    setNotice("loginNotice", data.message || "Logged in successfully");
+    await Promise.all([loadProducts(), loadOverview()]);
+  }catch(error){
+    setNotice("loginNotice", error.message, "err");
+  }
+}
+
+async function startEdit(id){
+  const product = state.products.find(item => item.id === id);
+  if(product) fillForm(product);
+}
+
+async function deleteProduct(id){
+  if(!confirm(`Delete product #${id}?`)) return;
+  try{
+    await api(`/api/products/${id}`, { method:"DELETE" });
+    setNotice("tableNotice", "Product deleted successfully");
+    await Promise.all([loadProducts(), loadOverview()]);
+    if(state.editingId === id) resetForm();
+  }catch(error){
+    setNotice("tableNotice", error.message, "err");
+  }
+}
+
+document.getElementById("productForm").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const payload = {
+    id: Number(document.getElementById("productId").value),
+    name: document.getElementById("productName").value.trim(),
+    w: document.getElementById("productWeight").value.trim(),
+    badge: document.getElementById("productBadge").value.trim(),
+    p: Number(document.getElementById("productPrice").value),
+    mrp: Number(document.getElementById("productMrp").value),
+    disc: Number(document.getElementById("productDisc").value || 0),
+    rev: Number(document.getElementById("productRev").value || 0),
+    rating: Number(document.getElementById("productRating").value || 4.5),
+    quantity_in_stock: Number(document.getElementById("productStock").value),
+    low_stock_threshold: Number(document.getElementById("productThreshold").value),
+    cat: document.getElementById("productCat").value.split(",").map(v=>v.trim()).filter(Boolean),
+    image: document.getElementById("productImage").value.trim(),
+    isActive: true
+  };
+
+  try{
+    if(state.editingId){
+      await api(`/api/products/${state.editingId}`, {
+        method:"PUT",
+        body: JSON.stringify(payload)
+      });
+      setNotice("formNotice", "Product updated successfully");
+    }else{
+      await api("/api/products", {
+        method:"POST",
+        body: JSON.stringify(payload)
+      });
+      setNotice("formNotice", "Product created successfully");
+    }
+    resetForm();
+    await Promise.all([loadProducts(), loadOverview()]);
+  }catch(error){
+    setNotice("formNotice", error.message, "err");
+  }
+});
+
+function logout(){
+  state.token = "";
+  state.adminName = "";
+  state.products = [];
+  localStorage.removeItem("basketbuddy_admin_token");
+  localStorage.removeItem("basketbuddy_admin_name");
+  updateSessionUI();
+  document.getElementById("productRows").innerHTML = "";
+  resetForm();
+}
+
+updateSessionUI();
+if(state.token){
+  Promise.all([loadProducts(), loadOverview()]).catch(() => logout());
+}
+</script>
+</body>
+</html>
