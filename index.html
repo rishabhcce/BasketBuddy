@@ -137,6 +137,13 @@ header{background:#fff;position:sticky;top:0;z-index:800;border-bottom:1px solid
 .pcard-stars{display:flex;align-items:center;gap:4px;margin-bottom:10px}
 .stars-ico{color:#f59e0b;font-size:11px}
 .stars-cnt{font-size:11px;color:var(--muted)}
+.pcard-rec{margin-bottom:12px;padding:10px 12px;border-radius:12px;background:linear-gradient(135deg,#f4faf6 0%,#edf8f1 100%);border:1px solid var(--bord2)}
+.pcard-rec-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
+.pcard-rec-label{font-size:10px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--g)}
+.pcard-rec button{border:none;background:#fff;color:var(--g);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:var(--sh)}
+.pcard-rec button:hover{background:var(--g);color:#fff}
+.pcard-rec-name{font-size:13px;font-weight:700;color:var(--dark)}
+.pcard-rec-note{font-size:11px;color:var(--muted);line-height:1.5}
 .pcard-btm{display:flex;align-items:center;justify-content:space-between}
 .pcard-price{font-size:18px;font-weight:800;color:var(--dark)}
 .pcard-mrp{font-size:12px;color:var(--muted);text-decoration:line-through;margin-left:5px;font-weight:400}
@@ -1459,6 +1466,46 @@ const RECIPES={
   essentials:['milk','egg','tomato','onion','rice','oil'],
 };
 
+const RECOMMENDATION_RULES={
+  1:{id:33,note:'Deeper gravies and pasta sauces start with this pairing.'},
+  2:{id:3,note:'A juicy fruit bowl combo that works great chilled.'},
+  3:{id:7,note:'Blend it with milk for an easy smoothie.'},
+  4:{id:29,note:'Turn it into a refreshing tropical cooler.'},
+  5:{id:1,note:'This duo covers the base for most home-style curries.'},
+  6:{id:24,note:'A quick masala toss gives broccoli more flavor.'},
+  7:{id:8,note:'A breakfast staple that shoppers usually buy together.'},
+  8:{id:10,note:'Perfect for buttery omelettes and toast.'},
+  9:{id:19,note:'Classic palak paneer starts right here.'},
+  10:{id:34,note:'A toast-ready match for breakfast or snacks.'},
+  11:{id:35,note:'A comforting dal-rice combo for everyday meals.'},
+  12:{id:17,note:'A spoon of ghee lifts rotis and parathas nicely.'},
+  13:{id:1,note:'Tomatoes help build a richer chicken curry base.'},
+  14:{id:18,note:'A reliable pantry partner for fish cooking.'},
+  15:{id:7,note:'Add milk for a simple banana shake.'},
+  16:{id:29,note:'A bright citrus pairing for a brunch spread.'},
+  17:{id:35,note:'A classic finishing touch for warm dal.'},
+  18:{id:35,note:'A pantry match for everyday tadka cooking.'},
+  19:{id:9,note:'This pairing gets you very close to palak paneer.'},
+  20:{id:24,note:'Use this masala to turn capsicum into a quick sabzi.'},
+  21:{id:17,note:'A rich partner for rotis and parathas.'},
+  22:{id:35,note:'A dependable rice-and-dal pantry combo.'},
+  23:{id:25,note:'Turmeric and oil are used together in many curries.'},
+  24:{id:20,note:'A quick add for a richer sabzi or fried rice.'},
+  25:{id:23,note:'Works well with oil in everyday tempering.'},
+  26:{id:28,note:'A classic snack-and-drink combo.'},
+  27:{id:29,note:'A simple party combo for evening cravings.'},
+  28:{id:30,note:'A sweet pairing shoppers often pick together.'},
+  29:{id:27,note:'A sweet-and-salty combo for hosting or movie night.'},
+  30:{id:31,note:'Chocolate lovers often add ice cream too.'},
+  31:{id:30,note:'Top it with chocolate for a dessert upgrade.'},
+  32:{id:36,note:'This is the fastest way to turn pasta into dinner.'},
+  33:{id:37,note:'Garlic and mozzarella make pasta night better.'},
+  34:{id:10,note:'Butter makes it breakfast-ready in one step.'},
+  35:{id:17,note:'A spoon of ghee completes a classic dal bowl.'},
+  36:{id:37,note:'Add cheese for a richer pasta finish.'},
+  37:{id:32,note:'A ready-made pairing for creamy pasta night.'}
+};
+
 /*  CART STATE  */
 let CART={}, WISH=new Set(), cpnDiscount=0, activePay='upi', cStep=1, selectedSlot=null;
 const VALID_COUPONS={FRESH10:10,FREEDEL:0,BB20:20,SUPER50:50,BB10:10};
@@ -1494,6 +1541,7 @@ function renderGrid(items,gridId,limit=8){
   }
   g.innerHTML=shown.map(p=>{
     const qty=CART[p.id]||0, wished=WISH.has(p.id);
+    const recommendation=getProductRecommendation(p);
     return`<div class="pcard" id="pc${p.id}">
       ${p.disc>0?`<div class="pbadge pbadge-red">${p.disc}% OFF</div>`:''}
       ${p.badge==='organic'?`<div class="pbadge pbadge-grn" style="top:${p.disc>0?'36px':'10px'}"> Organic</div>`:''}
@@ -1514,6 +1562,14 @@ function renderGrid(items,gridId,limit=8){
           <span class="stars-ico">${'&#9733;'.repeat(Math.floor(p.rating))}${'&#9734;'.repeat(5-Math.floor(p.rating))}</span>
           <span class="stars-cnt">(${p.rev.toLocaleString()})</span>
         </div>
+        ${recommendation?`<div class="pcard-rec">
+          <div class="pcard-rec-top">
+            <span class="pcard-rec-label">Buddy Recommends</span>
+            <button onclick="event.stopPropagation();addToCart(${recommendation.product.id})">+ ${recommendation.product.name}</button>
+          </div>
+          <div class="pcard-rec-name">${recommendation.product.name}</div>
+          <div class="pcard-rec-note">${recommendation.note}</div>
+        </div>`:''}
         <div class="pcard-btm">
           <div>
             <span class="pcard-price">Rs. ${p.p}</span>
@@ -1595,10 +1651,9 @@ function goShop(){document.getElementById('shop').scrollIntoView({behavior:'smoo
 /*  CART LOGIC  */
 function addToCart(id,qty=1){
   CART[id]=(CART[id]||0)+qty;
-  refreshAddBtn(id); syncCart(); maybeSuggestInCart();
+  refreshAddBtn(id); syncCart();
   const p=PRODUCTS.find(x=>x.id==id);
   showToast(`${p.name} added!`,'ok');
-  maybeSuggestInCart();
 }
 function changeQty(id,d){
   CART[id]=(CART[id]||0)+d;
@@ -1622,6 +1677,28 @@ function toggleWish(id){
 function quickView(id){
   const p=PRODUCTS.find(x=>x.id==id);
   showToast(`️ ${p.name} · ${p.w} · ${p.p}`,'');
+}
+
+function getProductRecommendation(product, excludedIds=[]){
+  if(!product) return null;
+  const excluded=new Set([product.id,...excludedIds].map(Number));
+  const direct=RECOMMENDATION_RULES[product.id];
+  if(direct){
+    const target=PRODUCTS.find(item=>item.id===direct.id);
+    if(target && !excluded.has(target.id)){
+      return { product:target, note:direct.note };
+    }
+  }
+  const fallback=PRODUCTS.find(item=>
+    item.id!==product.id &&
+    !excluded.has(item.id) &&
+    Array.isArray(item.cat) &&
+    item.cat.some(cat=>cat!=='all' && product.cat?.includes(cat))
+  );
+  if(fallback){
+    return { product:fallback, note:'Buddy picked this from the same aisle for an easy add-on.' };
+  }
+  return null;
 }
 
 function syncCart(){
@@ -1696,30 +1773,22 @@ function addRecipeBundle(recipe){
 
 function maybeSuggestInCart(){
   const keys=Object.keys(CART).map(Number), sug=document.getElementById('cartBuddySug');
-  const suggestions=[
-    {when:[2],notWhen:3,msg:'Watermelon pairs beautifully with strawberries.',dish:'You can make a chilled summer fruit bowl or a fresh smoothie.',id:3},
-    {when:[32],notWhen:36,msg:'Cooking pasta? Add pasta sauce for a faster dinner prep.',dish:'You can make a quick creamy tomato pasta.',id:36},
-    {when:[35,11],notWhen:17,msg:'Dal rice tastes even better with a spoon of pure ghee.',dish:'You can make a comforting dal rice bowl.',id:17},
-    {when:[8,34],notWhen:10,msg:'Your breakfast basket is set up well. Add butter for toast and omelettes.',dish:'You can make masala omelette toast.',id:10},
-    {when:[13],notWhen:1,msg:'Add fresh tomatoes to build a richer curry base.',dish:'You can make a homestyle chicken curry.',id:1},
-    {when:[1,33],notWhen:37,msg:'Tomato and garlic pair beautifully with mozzarella for pasta night.',dish:'You can make cheesy tomato pasta.',id:37},
-    {when:[9,19],notWhen:24,msg:'Palak paneer lovers usually add Kitchen King Masala for a richer finish.',dish:'You can make a richer palak paneer at home.',id:24},
-  ];
   if(!keys.length){
     sug.style.display='none';
     return;
   }
-  for(const s of suggestions){
-    if(s.when.some(x=>keys.includes(x))&&!keys.includes(s.notWhen)){
-      const p=PRODUCTS.find(x=>x.id===s.id);
-      sug.style.display='block';
-      document.getElementById('cbsText').innerHTML=`<strong>${s.msg}</strong><br><span style="font-size:12px;color:var(--muted)">${s.dish}</span>`;
-      document.getElementById('cbsChips').innerHTML=`<div class="cbs-chip" onclick="addToCart(${p.id});document.getElementById('cartBuddySug').style.display='none'">
-        <img src="${p.img}" style="width:20px;height:20px;border-radius:4px;object-fit:cover"> + ${p.name} ${p.p}
-      </div>`;
-      applyImageFallbacks(document.getElementById('cbsChips'));
-      return;
-    }
+  for(const id of keys){
+    const source=PRODUCTS.find(item=>item.id===id);
+    const recommendation=getProductRecommendation(source, keys);
+    if(!recommendation) continue;
+    const p=recommendation.product;
+    sug.style.display='block';
+    document.getElementById('cbsText').innerHTML=`<strong>${source.name} goes well with ${p.name}.</strong><br><span style="font-size:12px;color:var(--muted)">${recommendation.note}</span>`;
+    document.getElementById('cbsChips').innerHTML=`<div class="cbs-chip" onclick="addToCart(${p.id});document.getElementById('cartBuddySug').style.display='none'">
+      <img src="${p.img}" style="width:20px;height:20px;border-radius:4px;object-fit:cover"> + ${p.name} Rs. ${p.p}
+    </div>`;
+    applyImageFallbacks(document.getElementById('cbsChips'));
+    return;
   }
   sug.style.display='none';
 }
@@ -1800,9 +1869,9 @@ function verifyUPI(){
   else{msg.style.color='var(--red)';msg.textContent=' Invalid UPI ID. Format: name@paytm or name@okaxis'}
 }
 function detectCardType(num){
-  if(/^4\d{12}(\d{3})?(\d{3})?$/.test(num)) return 'Visa';
-  if(/^(5[1-5]\d{14}|2(2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(num)) return 'Mastercard';
-  if(/^(60|65|81|82|508)\d{10,17}$/.test(num)) return 'RuPay';
+  if(/^4\d{12}(\d{3}){0,2}$/.test(num)) return 'Visa';
+  if(/^(5[1-5]\d{14}|2(?:2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(num)) return 'Mastercard';
+  if(/^(508\d{13,16}|60\d{14,17}|65\d{14,17}|81\d{14,17}|82\d{14,17})$/.test(num)) return 'RuPay';
   if(/^3[47]\d{13}$/.test(num)) return 'American Express';
   if(/^6(?:011|5\d{2})\d{12}$/.test(num)) return 'Discover';
   return '';
@@ -1840,8 +1909,8 @@ function updateCardVerification(){
     msg.style.color='var(--g)';
     msg.textContent=`${brand} card verified successfully.`;
   }else{
-    msg.style.color='var(--warning)';
-    msg.textContent=`${brand} detected. Complete the full number to verify it.`;
+    msg.style.color='var(--org)';
+    msg.textContent=`${brand} detected. Enter the full ${raw.length <= 16 ? '16-digit' : 'card'} number to verify it.`;
   }
 }
 function fmtCardNum(el){
@@ -1852,7 +1921,7 @@ function fmtCardNum(el){
 function fmtExpiry(el){let v=el.value.replace(/\D/g,'').substring(0,4);if(v.length>=2)v=v.slice(0,2)+'/'+v.slice(2);el.value=v}
 function verifyCardDetails(){
   const number=document.getElementById('cardNumber')?.value.replace(/\D/g,'') || '';
-  const expiry=document.getElementById('cardExpiry')?.value.trim() || '';
+  const expiry=(document.getElementById('cardExpiry')?.value || '').replace(/\s+/g,'');
   const cvv=document.getElementById('cardCvv')?.value.trim() || '';
   const name=document.getElementById('cardName')?.value.trim() || '';
   const brand=detectCardType(number);
@@ -1860,8 +1929,16 @@ function verifyCardDetails(){
     showToast('Enter a valid card number before paying.','err');
     return false;
   }
+  if((brand==='Visa' || brand==='Mastercard' || brand==='Discover') && number.length!==16){
+    showToast(`${brand} cards should have 16 digits.`,`err`);
+    return false;
+  }
+  if(brand==='American Express' && number.length!==15){
+    showToast('American Express cards should have 15 digits.','err');
+    return false;
+  }
   if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)){
-    showToast('Enter expiry in MM / YY format.','err');
+    showToast('Enter expiry in MM/YY format.','err');
     return false;
   }
   if(cvv.length < 3 || cvv.length > 4){
