@@ -1109,8 +1109,8 @@ footer{background:#0d2818;color:#9ca3af}
           <div class="popt-body">
             <div class="card-form">
               <label style="font-size:12px;font-weight:700;color:var(--dark)">Card Number</label>
-              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" inputmode="numeric" autocomplete="cc-number" oninput="fmtCardNum(this)">
-              <div id="cardVerifyMsg" style="font-size:12px;font-weight:600;min-height:16px;color:var(--muted)">Enter a valid card number to detect the network.</div>
+              <input type="tel" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" inputmode="numeric" autocomplete="cc-number" oninput="fmtCardNum(this)" onpaste="setTimeout(()=>fmtCardNum(this),0)">
+              <div id="cardVerifyMsg" style="font-size:12px;font-weight:600;min-height:16px;color:var(--muted)">Enter your 16-digit card number.</div>
               <div class="fg-2" style="margin-bottom:0">
                 <div>
                   <label style="font-size:12px;font-weight:700;color:var(--dark);display:block;margin-bottom:6px">Expiry</label>
@@ -1925,7 +1925,7 @@ function verifyCardDetails(){
   const cvv=document.getElementById('cardCvv')?.value.trim() || '';
   const name=document.getElementById('cardName')?.value.trim() || '';
   if(number.length!==16){
-    showToast('Enter a 16-digit card number before paying.','err');
+    showToast(`Card number must be 16 digits. Detected: ${number.length}.`,'err');
     return false;
   }
   if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)){
