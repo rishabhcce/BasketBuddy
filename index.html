@@ -1109,7 +1109,7 @@ footer{background:#0d2818;color:#9ca3af}
           <div class="popt-body">
             <div class="card-form">
               <label style="font-size:12px;font-weight:700;color:var(--dark)">Card Number</label>
-              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="23" oninput="fmtCardNum(this)">
+              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" oninput="fmtCardNum(this)">
               <div id="cardVerifyMsg" style="font-size:12px;font-weight:600;min-height:16px;color:var(--muted)">Enter a valid card number to detect the network.</div>
               <div class="fg-2" style="margin-bottom:0">
                 <div>
@@ -1513,6 +1513,7 @@ const SESSION_KEY='basketbuddy_session';
 const SESSION={role:null,name:'Guest',token:'',user:null};
 const API_BASE="";
 const IMAGE_FALLBACK='https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=85&fit=crop';
+let PRODUCT_RECOMMENDATIONS={};
 const ADMIN_KPIS=[
   {value:'1,284',label:'Orders Today',note:'+12% vs yesterday'},
   {value:'2.8L',label:'Revenue Run Rate',note:'Strong evening basket size'},
@@ -1594,6 +1595,30 @@ function renderAll(){
   applyImageFallbacks();
 }
 
+function buildProductRecommendations(){
+  const fallbackProducts=PRODUCTS.filter(product=>product && product.id);
+  PRODUCT_RECOMMENDATIONS={};
+  fallbackProducts.forEach((product,index)=>{
+    const direct=RECOMMENDATION_RULES[product.id];
+    let target=null;
+    let note='';
+    if(direct){
+      target=fallbackProducts.find(item=>item.id===direct.id) || null;
+      note=direct.note;
+    }
+    if(!target){
+      target=fallbackProducts[(index+1)%fallbackProducts.length] || null;
+      note='Buddy picked this as an easy add-on from a nearby aisle.';
+    }
+    if(target && target.id===product.id){
+      target=fallbackProducts[(index+2)%fallbackProducts.length] || null;
+    }
+    if(target){
+      PRODUCT_RECOMMENDATIONS[product.id]={ product:target, note };
+    }
+  });
+}
+
 async function loadProductsFromApi(){
   try{
     const data = await apiRequest('/api/products');
@@ -1609,6 +1634,7 @@ async function loadProductsFromApi(){
     PRODUCTS = [...DEFAULT_PRODUCTS];
     showToast('Live product sync unavailable, using local catalog.','err');
   }
+  buildProductRecommendations();
   renderAll();
 }
 
@@ -1682,21 +1708,13 @@ function quickView(id){
 function getProductRecommendation(product, excludedIds=[]){
   if(!product) return null;
   const excluded=new Set([product.id,...excludedIds].map(Number));
-  const direct=RECOMMENDATION_RULES[product.id];
-  if(direct){
-    const target=PRODUCTS.find(item=>item.id===direct.id);
-    if(target && !excluded.has(target.id)){
-      return { product:target, note:direct.note };
-    }
+  const primary=PRODUCT_RECOMMENDATIONS[product.id];
+  if(primary && primary.product && !excluded.has(primary.product.id)){
+    return primary;
   }
-  const fallback=PRODUCTS.find(item=>
-    item.id!==product.id &&
-    !excluded.has(item.id) &&
-    Array.isArray(item.cat) &&
-    item.cat.some(cat=>cat!=='all' && product.cat?.includes(cat))
-  );
+  const fallback=PRODUCTS.find(item=>item && item.id!==product.id && !excluded.has(item.id));
   if(fallback){
-    return { product:fallback, note:'Buddy picked this from the same aisle for an easy add-on.' };
+    return { product:fallback, note:'Buddy picked this as a quick add-on for the same basket.' };
   }
   return null;
 }
@@ -1869,25 +1887,12 @@ function verifyUPI(){
   else{msg.style.color='var(--red)';msg.textContent=' Invalid UPI ID. Format: name@paytm or name@okaxis'}
 }
 function detectCardType(num){
-  if(/^4\d{12}(\d{3}){0,2}$/.test(num)) return 'Visa';
-  if(/^(5[1-5]\d{14}|2(?:2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(num)) return 'Mastercard';
-  if(/^(508\d{13,16}|60\d{14,17}|65\d{14,17}|81\d{14,17}|82\d{14,17})$/.test(num)) return 'RuPay';
-  if(/^3[47]\d{13}$/.test(num)) return 'American Express';
-  if(/^6(?:011|5\d{2})\d{12}$/.test(num)) return 'Discover';
-  return '';
-}
-function isValidLuhn(num){
-  let sum=0, shouldDouble=false;
-  for(let i=num.length-1;i>=0;i--){
-    let digit=Number(num[i]);
-    if(shouldDouble){
-      digit*=2;
-      if(digit>9) digit-=9;
-    }
-    sum+=digit;
-    shouldDouble=!shouldDouble;
-  }
-  return num.length >= 13 && sum % 10 === 0;
+  if(/^4/.test(num)) return 'Visa';
+  if(/^(5[1-5]|2[2-7])/.test(num)) return 'Mastercard';
+  if(/^(508|60|65|81|82)/.test(num)) return 'RuPay';
+  if(/^3[47]/.test(num)) return 'American Express';
+  if(/^6(?:011|5)/.test(num)) return 'Discover';
+  return 'Card';
 }
 function updateCardVerification(){
   const input=document.getElementById('cardNumber');
@@ -1900,21 +1905,19 @@ function updateCardVerification(){
     msg.textContent='Enter a valid card number to detect the network.';
     return;
   }
-  if(!brand){
-    msg.style.color='var(--red)';
-    msg.textContent='Card network not recognized yet. Check the number and try again.';
-    return;
-  }
-  if(isValidLuhn(raw)){
+  if(raw.length===16){
     msg.style.color='var(--g)';
     msg.textContent=`${brand} card verified successfully.`;
+  }else if(brand==='American Express' && raw.length===15){
+    msg.style.color='var(--g)';
+    msg.textContent='American Express card verified successfully.';
   }else{
     msg.style.color='var(--org)';
-    msg.textContent=`${brand} detected. Enter the full ${raw.length <= 16 ? '16-digit' : 'card'} number to verify it.`;
+    msg.textContent=`${brand} detected. Enter the full 16-digit card number to verify it.`;
   }
 }
 function fmtCardNum(el){
-  let v=el.value.replace(/\D/g,'').substring(0,19);
+  let v=el.value.replace(/\D/g,'').substring(0,16);
   el.value=v.replace(/(.{4})/g,'$1 ').trim();
   updateCardVerification();
 }
@@ -1925,16 +1928,8 @@ function verifyCardDetails(){
   const cvv=document.getElementById('cardCvv')?.value.trim() || '';
   const name=document.getElementById('cardName')?.value.trim() || '';
   const brand=detectCardType(number);
-  if(!brand || !isValidLuhn(number)){
-    showToast('Enter a valid card number before paying.','err');
-    return false;
-  }
-  if((brand==='Visa' || brand==='Mastercard' || brand==='Discover') && number.length!==16){
-    showToast(`${brand} cards should have 16 digits.`,`err`);
-    return false;
-  }
-  if(brand==='American Express' && number.length!==15){
-    showToast('American Express cards should have 15 digits.','err');
+  if(number.length!==16){
+    showToast('Enter a 16-digit card number before paying.','err');
     return false;
   }
   if(!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry)){
