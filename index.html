@@ -1697,12 +1697,13 @@ function addRecipeBundle(recipe){
 function maybeSuggestInCart(){
   const keys=Object.keys(CART).map(Number), sug=document.getElementById('cartBuddySug');
   const suggestions=[
-    {when:[32],notWhen:36,msg:'Cooking pasta? Add pasta sauce for a faster dinner prep.',id:36},
-    {when:[35,11],notWhen:17,msg:'Dal rice tastes even better with a spoon of pure ghee.',id:17},
-    {when:[8,34],notWhen:10,msg:'Your breakfast basket is set up well. Add butter for toast and omelettes.',id:10},
-    {when:[13],notWhen:1,msg:'Add fresh tomatoes to build a richer curry base.',id:1},
-    {when:[1,33],notWhen:37,msg:'Tomato and garlic pair beautifully with mozzarella for pasta night.',id:37},
-    {when:[9,19],notWhen:24,msg:'Palak paneer lovers usually add Kitchen King Masala for a richer finish.',id:24},
+    {when:[2],notWhen:3,msg:'Watermelon pairs beautifully with strawberries.',dish:'You can make a chilled summer fruit bowl or a fresh smoothie.',id:3},
+    {when:[32],notWhen:36,msg:'Cooking pasta? Add pasta sauce for a faster dinner prep.',dish:'You can make a quick creamy tomato pasta.',id:36},
+    {when:[35,11],notWhen:17,msg:'Dal rice tastes even better with a spoon of pure ghee.',dish:'You can make a comforting dal rice bowl.',id:17},
+    {when:[8,34],notWhen:10,msg:'Your breakfast basket is set up well. Add butter for toast and omelettes.',dish:'You can make masala omelette toast.',id:10},
+    {when:[13],notWhen:1,msg:'Add fresh tomatoes to build a richer curry base.',dish:'You can make a homestyle chicken curry.',id:1},
+    {when:[1,33],notWhen:37,msg:'Tomato and garlic pair beautifully with mozzarella for pasta night.',dish:'You can make cheesy tomato pasta.',id:37},
+    {when:[9,19],notWhen:24,msg:'Palak paneer lovers usually add Kitchen King Masala for a richer finish.',dish:'You can make a richer palak paneer at home.',id:24},
   ];
   if(!keys.length){
     sug.style.display='none';
@@ -1712,7 +1713,7 @@ function maybeSuggestInCart(){
     if(s.when.some(x=>keys.includes(x))&&!keys.includes(s.notWhen)){
       const p=PRODUCTS.find(x=>x.id===s.id);
       sug.style.display='block';
-      document.getElementById('cbsText').textContent=s.msg;
+      document.getElementById('cbsText').innerHTML=`<strong>${s.msg}</strong><br><span style="font-size:12px;color:var(--muted)">${s.dish}</span>`;
       document.getElementById('cbsChips').innerHTML=`<div class="cbs-chip" onclick="addToCart(${p.id});document.getElementById('cartBuddySug').style.display='none'">
         <img src="${p.img}" style="width:20px;height:20px;border-radius:4px;object-fit:cover"> + ${p.name} ${p.p}
       </div>`;
