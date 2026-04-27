@@ -558,6 +558,7 @@ footer{background:#0d2818;color:#9ca3af}
     <button class="ic-btn" title="Search" onclick="document.getElementById('searchInput').focus()"><i class="fas fa-search"></i></button>
     <button class="ic-btn" title="Wishlist" onclick="showToast('❤️ Open your wishlist','ok')"><i class="far fa-heart"></i></button>
     <button class="ic-btn" id="accountIconBtn" title="Account" onclick="handleAccountAction()"><i class="far fa-user"></i></button>
+    <button class="btn-out" id="customerLogoutBtn" style="display:none;padding:10px 18px" onclick="handleCustomerLogout()"><i class="fas fa-right-from-bracket"></i> Logout</button>
     <button class="ic-btn" title="Cart" onclick="openCartDrawer()">
       <i class="fas fa-shopping-bag"></i>
       <span class="ic-dot" id="cartCount">0</span>
@@ -1897,18 +1898,22 @@ function updateSessionUI(){
   const accountLabel=document.getElementById('accountLabel');
   const sessionBadge=document.getElementById('sessionBadge');
   const launchBtn=document.getElementById('adminLaunchBtn');
+  const logoutBtn=document.getElementById('customerLogoutBtn');
   if(SESSION.role==='admin'){
     if(accountLabel)accountLabel.textContent='Admin: '+SESSION.name;
     if(sessionBadge)sessionBadge.innerHTML='<i class=\"fas fa-shield-halved\"></i> Admin session active';
     if(launchBtn)launchBtn.classList.remove('hidden-admin');
+    if(logoutBtn)logoutBtn.style.display='inline-flex';
   }else if(SESSION.role==='user'){
     if(accountLabel)accountLabel.textContent='Hi, '+SESSION.name;
     if(sessionBadge)sessionBadge.innerHTML='<i class=\"fas fa-user\"></i> User signed in';
     if(launchBtn)launchBtn.classList.add('hidden-admin');
+    if(logoutBtn)logoutBtn.style.display='inline-flex';
   }else{
     if(accountLabel)accountLabel.textContent='Guest Mode';
     if(sessionBadge)sessionBadge.innerHTML='<i class=\"fas fa-user-clock\"></i> Signed out';
     if(launchBtn)launchBtn.classList.add('hidden-admin');
+    if(logoutBtn)logoutBtn.style.display='none';
   }
 }
 function renderAdminCollections(targetIds){
@@ -2021,6 +2026,13 @@ function openAdminDashboard(){
 function handleAccountAction(){
   if(SESSION.role==='admin'){openAdminDashboard();return}
   openLoginPanel('user-signin');
+}
+function handleCustomerLogout(){
+  const role=SESSION.role;
+  clearSession();
+  closeModal('loginModal');
+  closeModal('adminModal');
+  showToast(role==='admin'?'Admin signed out successfully.':'Signed out successfully.','ok');
 }
 function doSocialLogin(p){
   setSession('user',p+' Shopper','',{ firstName:p, lastName:'Shopper', email:'', phone:'' });
