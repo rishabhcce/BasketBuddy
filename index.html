@@ -1109,7 +1109,7 @@ footer{background:#0d2818;color:#9ca3af}
           <div class="popt-body">
             <div class="card-form">
               <label style="font-size:12px;font-weight:700;color:var(--dark)">Card Number</label>
-              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" oninput="fmtCardNum(this)">
+              <input type="text" id="cardNumber" placeholder="4111 1111 1111 1111" maxlength="19" inputmode="numeric" autocomplete="cc-number" oninput="fmtCardNum(this)">
               <div id="cardVerifyMsg" style="font-size:12px;font-weight:600;min-height:16px;color:var(--muted)">Enter a valid card number to detect the network.</div>
               <div class="fg-2" style="margin-bottom:0">
                 <div>
@@ -1899,26 +1899,23 @@ function updateCardVerification(){
   const msg=document.getElementById('cardVerifyMsg');
   if(!input || !msg) return;
   const raw=input.value.replace(/\D/g,'');
-  const brand=detectCardType(raw);
   if(!raw){
     msg.style.color='var(--muted)';
-    msg.textContent='Enter a valid card number to detect the network.';
+    msg.textContent='Enter your 16-digit card number.';
     return;
   }
   if(raw.length===16){
     msg.style.color='var(--g)';
-    msg.textContent=`${brand} card verified successfully.`;
-  }else if(brand==='American Express' && raw.length===15){
-    msg.style.color='var(--g)';
-    msg.textContent='American Express card verified successfully.';
+    msg.textContent='16-digit card verified successfully.';
   }else{
     msg.style.color='var(--org)';
-    msg.textContent=`${brand} detected. Enter the full 16-digit card number to verify it.`;
+    msg.textContent='Enter the full 16-digit card number to verify it.';
   }
 }
 function fmtCardNum(el){
-  let v=el.value.replace(/\D/g,'').substring(0,16);
-  el.value=v.replace(/(.{4})/g,'$1 ').trim();
+  const digits=el.value.replace(/\D/g,'').slice(0,16);
+  const parts=digits.match(/.{1,4}/g) || [];
+  el.value=parts.join(' ');
   updateCardVerification();
 }
 function fmtExpiry(el){let v=el.value.replace(/\D/g,'').substring(0,4);if(v.length>=2)v=v.slice(0,2)+'/'+v.slice(2);el.value=v}
@@ -1927,7 +1924,6 @@ function verifyCardDetails(){
   const expiry=(document.getElementById('cardExpiry')?.value || '').replace(/\s+/g,'');
   const cvv=document.getElementById('cardCvv')?.value.trim() || '';
   const name=document.getElementById('cardName')?.value.trim() || '';
-  const brand=detectCardType(number);
   if(number.length!==16){
     showToast('Enter a 16-digit card number before paying.','err');
     return false;
